@@ -47,7 +47,7 @@ class Item(models.Model):
     image = models.ImageField()
 
     def save(self, *args, **kwargs):
-        self.sale_price = self.price + 10
+        self.sale_price = self.price + 10.0
         super(Item, self).save(*args, **kwargs)
 
     def __str__(self):

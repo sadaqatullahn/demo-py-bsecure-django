@@ -1,5 +1,6 @@
 from django import template
-from core.models import Order
+# from models import Order
+from djecommerce.core.models import Order
 
 register = template.Library()
 

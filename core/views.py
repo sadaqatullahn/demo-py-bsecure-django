@@ -14,8 +14,8 @@ from django.shortcuts import render, get_object_or_404
 from django.utils import timezone
 from django.views.generic import ListView, DetailView, View
 
-from .forms import CheckoutForm, CouponForm, RefundForm, PaymentForm
-from .models import Item, OrderItem, Order, Address, Payment, Coupon, Refund, UserProfile
+from djecommerce.core.forms import CheckoutForm, CouponForm, RefundForm, PaymentForm
+from djecommerce.core.models import Item, OrderItem, Order, Address, Payment, Coupon, Refund, UserProfile
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -408,6 +408,9 @@ class HomeView(ListView):
     model = Item
     paginate_by = 10
     template_name = "home.html"
+
+    def get_queryset(self):
+        return self.model.objects.all()
 
 
 class OrderSummaryView(LoginRequiredMixin, View):
