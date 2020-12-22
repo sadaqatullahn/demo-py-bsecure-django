@@ -19,12 +19,6 @@ from .models import Item, OrderItem, Order, Address, Payment, Coupon, Refund, Us
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
-bSecure = {
-    'client_id': '68d148bf-ff54-4740-8bc1-f70d08b39bff',
-    'client_secret': 'OFv97Npd8s6xObGx/VCzHfrHklq7MwCGdA11Bbdaq14='
-}
-
-
 def create_ref_code():
     return ''.join(random.choices(string.ascii_lowercase + string.digits, k=20))
 
@@ -233,7 +227,7 @@ class PaymentView(View):
         if kwargs.__contains__('payment_option'):
             if kwargs.get("payment_option") == 'bSecure':
                 # bsecure = settings.get()
-                bsecure.authenticate(**bSecure)
+                bsecure.authenticate(**settings.bSecure)
                 if bsecure.base.custom_integration.authenticator.is_authenticated():
                     print("authenticated")
                     products = {}
