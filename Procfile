@@ -1,1 +1,1 @@
-web: gunicorn django-ecommerce:app
+web: gunicorn djecommerce:app
