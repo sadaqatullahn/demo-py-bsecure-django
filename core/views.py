@@ -44,22 +44,16 @@ def is_valid_form(values):
     return valid
 
 
-# class SSOView(LoginView):
-#     def post(self, *args, **kwargs):
-#         sso = bsecure.single_sign_on(**kwargs)
-#         return redirect(sso.get('url'))
-
-
 class BSecureCheckout(View):
 
     def get(self, *args, **kwargs):
-        print(self.request.GET)
-        print(args)
-        print(kwargs)
-        bsecure.authenticate(settings.bSecure.get("client_id"),
-                             settings.bSecure.get("client_secret"))
-        bsecure.create_order(order_details={})
-        return redirect("http://stackoverflow.com/")
+        get_data = self.request.GET.get('order_ref')
+
+
+        # bsecure.authenticate(settings.bSecure.get("client_id"),
+        #                      settings.bSecure.get("client_secret"))
+        # bsecure.create_order(order_details={})
+        return redirect("/")
 
 
 class CheckoutView(View):
@@ -267,7 +261,7 @@ class PaymentView(View):
                         'customer': customer_detail,
                         'products': products,
 
-                        "order_id": str(order.id - 12),
+                        "order_id": str(order.id - 10),
                         "total_amount": order.get_total(),
                         "sub_total_amount": order.get_sub_total(),
                         "discount_amount": order.get_coupon_amount(),
@@ -275,7 +269,7 @@ class PaymentView(View):
                     setup = bsecure.set_order(order_details=order_details)
                     if setup:
                         create_order = bsecure.create_order()
-                        print(create_order)
+                        # print(create_order)
                         if create_order.get('status') == 200:
                             print(create_order.get("body").get('checkout_url'))
                             return redirect(create_order.get("body").get('checkout_url'))
