@@ -2,6 +2,8 @@ import random
 import string
 
 import stripe
+
+import bSecure as bsecure
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -42,16 +44,10 @@ def is_valid_form(values):
     return valid
 
 
-from allauth.account.views import LoginView
-
-# from bSecure import custom_integration as ci
-import custom_integration as ci
-
-
-class SSOView(LoginView):
-    def post(self, *args, **kwargs):
-        sso = ci.single_sign_on(**kwargs)
-        return redirect(sso.get('url'))
+# class SSOView(LoginView):
+#     def post(self, *args, **kwargs):
+#         sso = bsecure.single_sign_on(**kwargs)
+#         return redirect(sso.get('url'))
 
 
 class BSecureCheckout(View):
@@ -60,9 +56,9 @@ class BSecureCheckout(View):
         print(self.request.GET)
         print(args)
         print(kwargs)
-        ci.authenticate(settings.bSecure.get("client_id"),
-                        settings.bSecure.get("client_secret"))
-        ci.create_order(order_details={})
+        bsecure.authenticate(settings.bSecure.get("client_id"),
+                             settings.bSecure.get("client_secret"))
+        bsecure.create_order(order_details={})
         return redirect("http://stackoverflow.com/")
 
 
@@ -243,8 +239,8 @@ class PaymentView(View):
         if kwargs.__contains__('payment_option'):
             if kwargs.get("payment_option") == 'bSecure':
                 # bsecure = settings.get()
-                ci.authenticate(**bSecure)
-                if ci.base.custom_integration.authenticator.is_authenticated():
+                bsecure.authenticate(**bSecure)
+                if bsecure.base.custom_integration.authenticator.is_authenticated():
                     print("authenticated")
                     products = {}
                     for item in order.items.all():
@@ -261,7 +257,6 @@ class PaymentView(View):
                         )
                         products[str(item.id)] = _item
                     customer = order.user
-                    # print(vars(customer))
                     customer_detail = dict(
                         name=customer.first_name + ' ' + customer.last_name,
                         email=customer.email,
@@ -272,20 +267,19 @@ class PaymentView(View):
                         'customer': customer_detail,
                         'products': products,
 
-                        "order_id": str(order.id-12),
+                        "order_id": str(order.id - 12),
                         "total_amount": order.get_total(),
                         "sub_total_amount": order.get_sub_total(),
                         "discount_amount": order.get_coupon_amount(),
                     }
-                    setup = ci.set_order(order_details=order_details)
+                    setup = bsecure.set_order(order_details=order_details)
                     if setup:
-                        create_order = ci.create_order()
+                        create_order = bsecure.create_order()
                         print(create_order)
                         if create_order.get('status') == 200:
                             print(create_order.get("body").get('checkout_url'))
                             return redirect(create_order.get("body").get('checkout_url'))
                         return redirect('/')
-                # ci.authenticate(client_id=settings.bSecure.get("client_id"))
         if order.billing_address:
             context = {
                 'order': order,
