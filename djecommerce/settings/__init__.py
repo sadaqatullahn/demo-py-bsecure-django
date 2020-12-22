@@ -1,9 +1,9 @@
 from os import environ
 # import django_heroku
-# if environ.get('DEBUG', True):
-#     from .development import *
-# else:
-from .production import *
+if environ.get('DEBUG', True):
+    from .development import *
+else:
+    from .production import *
 
 
 bSecure = {
