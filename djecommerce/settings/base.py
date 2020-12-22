@@ -4,7 +4,8 @@ from decouple import config
 BASE_DIR = os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__))))
 
-SECRET_KEY = config('SECRET_KEY')
+# SECRET_KEY = config('SECRET_KEY') or 'kobl@t=yw9d*0y%jt2gjnq78=u!z_rrxb&w8e47l!(jz@m79zy'
+SECRET_KEY = 'kobl@t=yw9d*0y%jt2gjnq78=u!z_rrxb&w8e47l!(jz@m79zy'
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -80,3 +81,8 @@ LOGIN_REDIRECT_URL = '/'
 # CRISPY FORMS
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
+
+bSecure = {
+    'client_id': '68d148bf-ff54-4740-8bc1-f70d08b39bff',
+    'client_secret': 'OFv97Npd8s6xObGx/VCzHfrHklq7MwCGdA11Bbdaq14='
+}

@@ -17,6 +17,11 @@ from .models import Item, OrderItem, Order, Address, Payment, Coupon, Refund, Us
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
+bSecure = {
+    'client_id': '68d148bf-ff54-4740-8bc1-f70d08b39bff',
+    'client_secret': 'OFv97Npd8s6xObGx/VCzHfrHklq7MwCGdA11Bbdaq14='
+}
+
 
 def create_ref_code():
     return ''.join(random.choices(string.ascii_lowercase + string.digits, k=20))
@@ -35,6 +40,30 @@ def is_valid_form(values):
         if field == '':
             valid = False
     return valid
+
+
+from allauth.account.views import LoginView
+
+# from bSecure import custom_integration as ci
+import custom_integration as ci
+
+
+class SSOView(LoginView):
+    def post(self, *args, **kwargs):
+        sso = ci.single_sign_on(**kwargs)
+        return redirect(sso.get('url'))
+
+
+class BSecureCheckout(View):
+
+    def get(self, *args, **kwargs):
+        print(self.request.GET)
+        print(args)
+        print(kwargs)
+        ci.authenticate(settings.bSecure.get("client_id"),
+                        settings.bSecure.get("client_secret"))
+        ci.create_order(order_details={})
+        return redirect("http://stackoverflow.com/")
 
 
 class CheckoutView(View):
@@ -197,9 +226,11 @@ class CheckoutView(View):
                     return redirect('core:payment', payment_option='stripe')
                 elif payment_option == 'P':
                     return redirect('core:payment', payment_option='paypal')
+                elif payment_option == 'B':
+                    return redirect('core:payment', payment_option='bSecure')
                 else:
                     messages.warning(
-                        self.request, "Invalid payment option selected")
+                        self.request, "Invalid payment option selected!@#")
                     return redirect('core:checkout')
         except ObjectDoesNotExist:
             messages.warning(self.request, "You do not have an active order")
@@ -209,11 +240,57 @@ class CheckoutView(View):
 class PaymentView(View):
     def get(self, *args, **kwargs):
         order = Order.objects.get(user=self.request.user, ordered=False)
+        if kwargs.__contains__('payment_option'):
+            if kwargs.get("payment_option") == 'bSecure':
+                # bsecure = settings.get()
+                ci.authenticate(**bSecure)
+                if ci.base.custom_integration.authenticator.is_authenticated():
+                    print("authenticated")
+                    products = {}
+                    for item in order.items.all():
+                        _item = dict(
+                            id=str(item.item.id),
+                            name=item.item.title,
+                            sku=item.item.slug,
+                            quantity=item.quantity,
+                            image=item.item.image.url,
+                            price=item.item.price,
+                            sale_price=item.item.sale_price,
+                            description=item.item.description,
+                            short_description=item.item.label,
+                        )
+                        products[str(item.id)] = _item
+                    customer = order.user
+                    # print(vars(customer))
+                    customer_detail = dict(
+                        name=customer.first_name + ' ' + customer.last_name,
+                        email=customer.email,
+                        country_code='92',
+                        phone_number=customer.userprofile.phone_number
+                    )
+                    order_details = {
+                        'customer': customer_detail,
+                        'products': products,
+
+                        "order_id": str(order.id-12),
+                        "total_amount": order.get_total(),
+                        "sub_total_amount": order.get_sub_total(),
+                        "discount_amount": order.get_coupon_amount(),
+                    }
+                    setup = ci.set_order(order_details=order_details)
+                    if setup:
+                        create_order = ci.create_order()
+                        print(create_order)
+                        if create_order.get('status') == 200:
+                            print(create_order.get("body").get('checkout_url'))
+                            return redirect(create_order.get("body").get('checkout_url'))
+                        return redirect('/')
+                # ci.authenticate(client_id=settings.bSecure.get("client_id"))
         if order.billing_address:
             context = {
                 'order': order,
                 'DISPLAY_COUPON_FORM': False,
-                'STRIPE_PUBLIC_KEY' : settings.STRIPE_PUBLIC_KEY
+                'STRIPE_PUBLIC_KEY': settings.STRIPE_PUBLIC_KEY
             }
             userprofile = self.request.user.userprofile
             if userprofile.one_click_purchasing:

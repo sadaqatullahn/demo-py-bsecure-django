@@ -5,7 +5,6 @@ from django.db.models import Sum
 from django.shortcuts import reverse
 from django_countries.fields import CountryField
 
-
 CATEGORY_CHOICES = (
     ('S', 'Shirt'),
     ('SW', 'Sport wear'),
@@ -28,7 +27,9 @@ class UserProfile(models.Model):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     stripe_customer_id = models.CharField(max_length=50, blank=True, null=True)
+    bsecure_customer_id = models.CharField(max_length=50, blank=True, null=True)
     one_click_purchasing = models.BooleanField(default=False)
+    phone_number = models.CharField(max_length=16, blank=True, null=True)
 
     def __str__(self):
         return self.user.username
@@ -37,12 +38,17 @@ class UserProfile(models.Model):
 class Item(models.Model):
     title = models.CharField(max_length=100)
     price = models.FloatField()
+    sale_price = models.FloatField()
     discount_price = models.FloatField(blank=True, null=True)
     category = models.CharField(choices=CATEGORY_CHOICES, max_length=2)
     label = models.CharField(choices=LABEL_CHOICES, max_length=1)
     slug = models.SlugField()
     description = models.TextField()
     image = models.ImageField()
+
+    def save(self, *args, **kwargs):
+        self.sale_price = self.price + 10
+        super(Item, self).save(*args, **kwargs)
 
     def __str__(self):
         return self.title
@@ -131,6 +137,17 @@ class Order(models.Model):
             total -= self.coupon.amount
         return total
 
+    def get_sub_total(self):
+        total = 0
+        for order_item in self.items.all():
+            total += order_item.get_final_price()
+        return total
+
+    def get_coupon_amount(self):
+        if self.coupon:
+            return self.coupon.amount
+        return 0
+
 
 class Address(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL,
@@ -151,6 +168,7 @@ class Address(models.Model):
 
 class Payment(models.Model):
     bsecure_charge_id = models.CharField(max_length=50)
+    stripe_charge_id = models.CharField(max_length=50)
     user = models.ForeignKey(settings.AUTH_USER_MODEL,
                              on_delete=models.SET_NULL, blank=True, null=True)
     amount = models.FloatField()

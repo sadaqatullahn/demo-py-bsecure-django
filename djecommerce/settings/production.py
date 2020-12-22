@@ -1,7 +1,7 @@
 from .base import *
 
 DEBUG = config('DEBUG', cast=bool)
-ALLOWED_HOSTS = ['bsecure-python-app.herokuapp.com', ]
+ALLOWED_HOSTS = ['bsecure-python-app.herokuapp.com',  '*']
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},

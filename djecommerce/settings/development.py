@@ -1,7 +1,11 @@
 from .base import *
 
+SECRET_KEY = 'kobl@t=yw9d*0y%jt2gjnq78=u!z_rrxb&w8e47l!(jz@m79zy'
+
+
 DEBUG = True
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'bsecure-python-app.herokuapp.com', '*']
+# ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'bsecure-python-app.herokuapp.com', '*']
+ALLOWED_HOSTS = ['*', ]
 
 INSTALLED_APPS += [
     'debug_toolbar',
