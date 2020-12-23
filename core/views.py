@@ -257,7 +257,7 @@ class PaymentView(View):
         if kwargs.__contains__('payment_option'):
             if kwargs.get("payment_option") == 'bSecure':
                 # bsecure = settings.get()
-                bsecure.authenticate(**settings.bSecure)
+                bsecure.authenticate(**bSecure)
                 if bsecure.base.custom_integration.authenticator.is_authenticated():
                     print("authenticated")
                     products = {}
