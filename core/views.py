@@ -14,10 +14,18 @@ from django.shortcuts import render, get_object_or_404
 from django.utils import timezone
 from django.views.generic import ListView, DetailView, View
 
-from djecommerce.core.forms import CheckoutForm, CouponForm, RefundForm, PaymentForm
-from djecommerce.core.models import Item, OrderItem, Order, Address, Payment, Coupon, Refund, UserProfile
+from .forms import CheckoutForm, CouponForm, RefundForm, PaymentForm
+from .models import Item, OrderItem, Order, Address, Payment, Coupon, Refund, UserProfile
 
-stripe.api_key = settings.STRIPE_SECRET_KEY
+stripe.api_key = ''
+
+bSecure = {
+    'client_id': '68d148bf-ff54-4740-8bc1-f70d08b39bff',
+    'client_secret': 'OFv97Npd8s6xObGx/VCzHfrHklq7MwCGdA11Bbdaq14='
+}
+
+
+# stripe.api_key = settings.STRIPE_SECRET_KEY
 
 def create_ref_code():
     return ''.join(random.choices(string.ascii_lowercase + string.digits, k=20))
@@ -38,18 +46,39 @@ def is_valid_form(values):
     return valid
 
 
+class BSecureSSO(View):
+
+    def get(self, *args, **kwargs):
+        print(self.request.GET)
+        sso_values = {
+            "client_id": bSecure.get("client_id"),
+            "scope": "profile",
+            "response_type": "code",
+            "state": "sadaqatullah"
+        }
+
+        if bsecure.single_sign_on_set_values(**sso_values):
+            print(bsecure.single_sign_on())
+
+            url = self.request.META.get('HTTP_REFERER')
+            return redirect(bsecure.single_sign_on())
+
+    def post(self, *args, **kwargs):
+        print(args)
+        print(kwargs)
+        print(self.request.POST)
+        return redirect(self.request.META.get('HTTP_REFERER'))
+
+
 class BSecureCheckout(View):
 
     def get(self, *args, **kwargs):
         get_data = self.request.GET.get('order_ref')
 
-
-        # bsecure.authenticate(settings.bSecure.get("client_id"),
-        #                      settings.bSecure.get("client_secret"))
-        # bsecure.create_order(order_details={})
         return redirect("/")
 
 
+# @login_required(login_url=)
 class CheckoutView(View):
     def get(self, *args, **kwargs):
         try:
@@ -221,6 +250,7 @@ class CheckoutView(View):
             return redirect("core:order-summary")
 
 
+# @login_required
 class PaymentView(View):
     def get(self, *args, **kwargs):
         order = Order.objects.get(user=self.request.user, ordered=False)
@@ -255,7 +285,7 @@ class PaymentView(View):
                         'customer': customer_detail,
                         'products': products,
 
-                        "order_id": str(order.id - 10),
+                        "order_id": str(order.id + 5),
                         "total_amount": order.get_total(),
                         "sub_total_amount": order.get_sub_total(),
                         "discount_amount": order.get_coupon_amount(),

@@ -21,6 +21,10 @@ DATABASES = {
         'PORT': ''
     }
 }
-
-STRIPE_PUBLIC_KEY = config('BSECURE_LIVE_CLIENT_ID')
-STRIPE_SECRET_KEY = config('BSECURE_LIVE_CLIENT_SECRET')
+#
+# STRIPE_PUBLIC_KEY = config('BSECURE_LIVE_CLIENT_ID')
+# STRIPE_SECRET_KEY = config('BSECURE_LIVE_CLIENT_SECRET')
+bSecure = {
+    'client_id': '68d148bf-ff54-4740-8bc1-f70d08b39bff',
+    'client_secret': 'OFv97Npd8s6xObGx/VCzHfrHklq7MwCGdA11Bbdaq14='
+}

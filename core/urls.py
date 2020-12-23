@@ -1,5 +1,5 @@
 from django.urls import path
-from djecommerce.core.views import (
+from .views import (
     ItemDetailView,
     CheckoutView,
     BSecureCheckout,
@@ -10,7 +10,7 @@ from djecommerce.core.views import (
     remove_single_item_from_cart,
     PaymentView,
     AddCouponView,
-    RequestRefundView
+    RequestRefundView, BSecureSSO
 )
 
 app_name = 'core'
@@ -19,6 +19,7 @@ urlpatterns = [
     path('', HomeView.as_view(), name='home'),
     path('checkout/', CheckoutView.as_view(), name='checkout'),
     path('bsecure-order-created/', BSecureCheckout.as_view(), name='bsecure'),
+    path('bsecure-single-sign-on/', BSecureSSO.as_view(), name='bsecure_sso'),
     path('order-summary/', OrderSummaryView.as_view(), name='order-summary'),
     path('product/<slug>/', ItemDetailView.as_view(), name='product'),
     path('add-to-cart/<slug>/', add_to_cart, name='add-to-cart'),
