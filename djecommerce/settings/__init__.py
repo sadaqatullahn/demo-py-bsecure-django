@@ -1,5 +1,5 @@
 from os import environ
-# import django_heroku
+import django_heroku
 if environ.get('DEBUG', True):
     from .development import *
 else:
@@ -11,4 +11,4 @@ bSecure = {
     'client_secret': 'OFv97Npd8s6xObGx/VCzHfrHklq7MwCGdA11Bbdaq14='
 }
 
-# django_heroku.settings(locals())
+django_heroku.settings(locals())
