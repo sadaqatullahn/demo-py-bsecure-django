@@ -1,6 +1,6 @@
 asgiref==3.3.1
 autopep8==1.4.4
-bSecure==0.0.0.4
+bSecure==0.0.0.5
 certifi==2019.3.9
 chardet==3.0.4
 defusedxml==0.6.0

@@ -478,19 +478,13 @@ class HomeView(ListView):
         return self.model.objects.all()
 
     def get(self, *args, **kwargs):
-        print(kwargs)
         response = super(HomeView, self).get(*args, **kwargs)
-        print(args)
-        print(response.context_data)
-        # contextdata
         response.context_data.update(
-            {"bsecure_button_image_url": bsecure.sso_login_button_image}
+            {"bsecure_button_image_url": bsecure.sso_login_button_image()}
         )
         return response
 
     def post(self, *args, **kwargs):
-        print(kwargs)
-        print(args)
         return super(HomeView, self).post(*args, **kwargs)
 
 
