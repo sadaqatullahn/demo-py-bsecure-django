@@ -73,22 +73,22 @@ class BSecureSSO(View):
                                         'postal_code': 75200}}, 'exception': None}
             bsecure.authenticate(**bSecure)
             customer_profile = bsecure.sso_get_customer_profile(state=data.get('state')[0], code=data.get('code')[0], )
-            user = User(
-                email=customer_profile.get('email'),
-                username=customer_profile.get('email').split('@')[0] + customer_profile.get('phone_number'),
-                first_name=customer_profile.get('name').split(' ')[0],
-                last_name=customer_profile.get('name').split(' ')[1:],
-                # last_name=customer_profile.get('name').split(' ')[1:]
-            )
-            user.set_password(customer_profile.get('thirdpart_password'))
-            user.save()
-            from allauth.account.views import LoginView
-            # LoginView.as_view()()
-            ret = perform_login(self.request, user,
-                                email_verification=None,
-                                redirect_url='/')
-            return ret
-            # return redirect('account_login')
+            try:
+                user = User.objects.get(email=customer_profile.get('email'))
+            except User.DoesNotExist:
+                user = User(
+                    email=customer_profile.get('email'),
+                    username=customer_profile.get('email').split('@')[0] + customer_profile.get('phone_number'),
+                    first_name=customer_profile.get('name').split(' ')[0],
+                    last_name=customer_profile.get('name').split(' ')[1:],
+                )
+                user.set_password(customer_profile.get('thirdpart_password'))
+                user.save()
+            finally:
+                ret = perform_login(self.request, user,
+                                    email_verification=None,
+                                    redirect_url='/')
+                return ret
         else:
             sso_values = {
                 "client_id": bSecure.get("client_id"),
@@ -102,13 +102,6 @@ class BSecureSSO(View):
                 bsecure_sso_obj.state_uuid = sso_values.get('state')
                 bsecure_sso_obj.save()
                 return redirect(bsecure.single_sign_on())
-
-    def post(self, *args, **kwargs):
-        print("POST")
-        print(args)
-        print(kwargs)
-        print(self.request.POST)
-        return redirect(self.request.META.get('HTTP_REFERER'))
 
 
 class BSecureCheckout(View):
