@@ -68,13 +68,13 @@ class BSecureSSO(View):
                 bsecure_sso_obj = BSecure_SSO_Info.objects.get(state_uuid=data.get('state')[0])
             except Exception as e:
                 print(e.__traceback__)
-                adapter = get_adapter(self.request)
-                adapter.add_message(
-                    self.request,
-                    messages.MessageFailure,
-                    'account/messages/logged_in.txt',
-                    # {'user': user}
-                )
+                # adapter = get_adapter(self.request)
+                # adapter.add_message(
+                #     self.request,
+                #     messages.MessageFailure,
+                #     'account/messages/logged_in.txt',
+                #     {'user': user}
+                # )
                 return redirect('/')
             __d = {'status': 200, 'message': ['Request Successful'],
                    'body': {'name': 'Sadaqatullah Noonari', 'email': 'sadaqatullah.noonari@gmail.com',
