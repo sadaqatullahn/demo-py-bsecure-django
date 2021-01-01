@@ -3,6 +3,7 @@ import string
 import uuid
 
 import bSecure as bsecure
+from allauth.account import adapter
 from allauth.account.utils import perform_login
 from django.conf import settings
 from django.contrib import messages
@@ -62,7 +63,17 @@ class BSecureSSO(View):
         if data.__contains__('code') and data.__contains__('state'):
             print("data_code: ", data.get('code'))
             print("data_state: ", data.get('state'))
-            bsecure_sso_obj = BSecure_SSO_Info.objects.get(state_uuid=data.get('state')[0])
+            try:
+                bsecure_sso_obj = BSecure_SSO_Info.objects.get(state_uuid=data.get('state')[0])
+            except Exception as e:
+                print(e.__traceback__)
+                adapter.add_message(
+                    self.request,
+                    messages.MessageFailure,
+                    'account/messages/logged_in.txt',
+                    # {'user': user}
+                )
+                return redirect('/')
             __d = {'status': 200, 'message': ['Request Successful'],
                    'body': {'name': 'Sadaqatullah Noonari', 'email': 'sadaqatullah.noonari@gmail.com',
                             'phone_number': '3332641981', 'country_code': 92,
