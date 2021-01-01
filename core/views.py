@@ -3,7 +3,8 @@ import string
 import uuid
 
 import bSecure as bsecure
-from allauth.account import adapter
+# from allauth.account import adapter
+from allauth.account.adapter import get_adapter
 from allauth.account.utils import perform_login
 from django.conf import settings
 from django.contrib import messages
@@ -67,6 +68,7 @@ class BSecureSSO(View):
                 bsecure_sso_obj = BSecure_SSO_Info.objects.get(state_uuid=data.get('state')[0])
             except Exception as e:
                 print(e.__traceback__)
+                adapter = get_adapter(request)
                 adapter.add_message(
                     self.request,
                     messages.MessageFailure,
