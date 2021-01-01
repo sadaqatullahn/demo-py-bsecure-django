@@ -19,6 +19,7 @@ urlpatterns = [
     path('', HomeView.as_view(), name='home'),
     path('checkout/', CheckoutView.as_view(), name='checkout'),
     path('bsecure-order-created/', BSecureCheckout.as_view(), name='bsecure'),
+    path('bsecure-order-created-webhook/', BSecureCheckout.as_view(), name='bsecure'),
     path('bsecure-single-sign-on/', BSecureSSO.as_view(), name='bsecure_sso'),
     path('order-summary/', OrderSummaryView.as_view(), name='order-summary'),
     path('product/<slug>/', ItemDetailView.as_view(), name='product'),

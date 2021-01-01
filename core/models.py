@@ -94,6 +94,18 @@ class OrderItem(models.Model):
         return self.get_total_item_price()
 
 
+class BSecure_SSO_Info(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE,
+                                related_name='sso_credentials')
+    code = models.CharField(max_length=256, blank=True, null=True, )
+    state_uuid = models.CharField(max_length=256, blank=False, null=False, )
+
+
+class BSecure_Checkout(models.Model):
+    reference_id = models.CharField(max_length=256, null=True, )
+    order = models.OneToOneField('order', null=False, blank=False, on_delete=models.CASCADE, related_name='bsecure')
+
+
 class Order(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL,
                              on_delete=models.CASCADE)

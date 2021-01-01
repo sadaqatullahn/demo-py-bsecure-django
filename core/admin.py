@@ -2,11 +2,11 @@ from django.contrib import admin
 
 from allauth.socialaccount.models import SocialApp, SocialAccount, SocialToken
 
-from .models import Item, OrderItem, Order, Payment, Coupon, Refund, Address, UserProfile
+from .models import Item, OrderItem, Order, Payment, Coupon, Refund, Address, UserProfile, BSecure_Checkout
 
-# admin.site.unregister(SocialApp)
-# admin.site.unregister(SocialAccount)
-# admin.site.unregister(SocialToken)
+admin.site.unregister(SocialApp)
+admin.site.unregister(SocialAccount)
+admin.site.unregister(SocialToken)
 
 
 def make_refund_accepted(modeladmin, request, queryset):
@@ -69,3 +69,4 @@ admin.site.register(Coupon)
 admin.site.register(Refund)
 admin.site.register(Address, AddressAdmin)
 admin.site.register(UserProfile)
+admin.site.register(BSecure_Checkout)

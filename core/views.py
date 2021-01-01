@@ -1,31 +1,38 @@
 import random
 import string
-
-import stripe
+import uuid
 
 import bSecure as bsecure
+from allauth.account.utils import perform_login
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import redirect
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import (render, get_object_or_404)
 from django.utils import timezone
-from django.views.generic import ListView, DetailView, View
+from django.views.generic import (ListView, DetailView, View)
 
-from .forms import CheckoutForm, CouponForm, RefundForm, PaymentForm
-from .models import Item, OrderItem, Order, Address, Payment, Coupon, Refund, UserProfile
-
-stripe.api_key = ''
+from .forms import (CheckoutForm, CouponForm, RefundForm, PaymentForm)
+from .models import (Item,
+                     OrderItem,
+                     Order,
+                     Address,
+                     Payment,
+                     Coupon,
+                     Refund,
+                     UserProfile,
+                     BSecure_Checkout,
+                     BSecure_SSO_Info)
 
 bSecure = {
     'client_id': '68d148bf-ff54-4740-8bc1-f70d08b39bff',
     'client_secret': 'OFv97Npd8s6xObGx/VCzHfrHklq7MwCGdA11Bbdaq14='
 }
+User = get_user_model()
 
-
-# stripe.api_key = settings.STRIPE_SECRET_KEY
 
 def create_ref_code():
     return ''.join(random.choices(string.ascii_lowercase + string.digits, k=20))
@@ -49,21 +56,55 @@ def is_valid_form(values):
 class BSecureSSO(View):
 
     def get(self, *args, **kwargs):
+        print("GET")
         print(self.request.GET)
-        sso_values = {
-            "client_id": bSecure.get("client_id"),
-            "scope": "profile",
-            "response_type": "code",
-            "state": "sadaqatullah"
-        }
-
-        if bsecure.single_sign_on_set_values(**sso_values):
-            print(bsecure.single_sign_on())
-
-            url = self.request.META.get('HTTP_REFERER')
-            return redirect(bsecure.single_sign_on())
+        data = {**self.request.GET}
+        if data.__contains__('code') and data.__contains__('state'):
+            print("data_code: ", data.get('code'))
+            print("data_state: ", data.get('state'))
+            bsecure_sso_obj = BSecure_SSO_Info.objects.get(state_uuid=data.get('state')[0])
+            __d = {'status': 200, 'message': ['Request Successful'],
+                   'body': {'name': 'Sadaqatullah Noonari', 'email': 'sadaqatullah.noonari@gmail.com',
+                            'phone_number': '3332641981', 'country_code': 92,
+                            'thirdparty_password': 'af160f91bfehg40i@2',
+                            'address': {'country': 'Pakistan', 'state': 'Sindh', 'city': 'Karachi',
+                                        'area': 'PIB Colony',
+                                        'address': 'University Rd, PIB Colony, Karachi, Karachi City, Sindh, Pakistan',
+                                        'postal_code': 75200}}, 'exception': None}
+            bsecure.authenticate(**bSecure)
+            customer_profile = bsecure.sso_get_customer_profile(state=data.get('state')[0], code=data.get('code')[0], )
+            user = User(
+                email=customer_profile.get('email'),
+                username=customer_profile.get('email').split('@')[0] + customer_profile.get('phone_number'),
+                first_name=customer_profile.get('name').split(' ')[0],
+                last_name=customer_profile.get('name').split(' ')[1:],
+                # last_name=customer_profile.get('name').split(' ')[1:]
+            )
+            user.set_password(customer_profile.get('thirdpart_password'))
+            user.save()
+            from allauth.account.views import LoginView
+            # LoginView.as_view()()
+            ret = perform_login(self.request, user,
+                                email_verification=None,
+                                redirect_url='/')
+            return ret
+            # return redirect('account_login')
+        else:
+            sso_values = {
+                "client_id": bSecure.get("client_id"),
+                "scope": "profile",
+                "response_type": "code",
+                "state": uuid.uuid4().hex
+            }
+            print(sso_values)
+            if bsecure.single_sign_on_set_values(**sso_values):
+                bsecure_sso_obj = BSecure_SSO_Info()
+                bsecure_sso_obj.state_uuid = sso_values.get('state')
+                bsecure_sso_obj.save()
+                return redirect(bsecure.single_sign_on())
 
     def post(self, *args, **kwargs):
+        print("POST")
         print(args)
         print(kwargs)
         print(self.request.POST)
@@ -73,8 +114,11 @@ class BSecureSSO(View):
 class BSecureCheckout(View):
 
     def get(self, *args, **kwargs):
-        get_data = self.request.GET.get('order_ref')
-
+        order_reference = self.request.GET.get('order_ref')
+        print(order_reference)
+        bsecure_checkout_ref_obj = BSecure_Checkout.objects.get(reference_id=order_reference)
+        bsecure_checkout_ref_obj.order.ordered = True
+        bsecure_checkout_ref_obj.order.save()
         return redirect("/")
 
 
@@ -88,7 +132,8 @@ class CheckoutView(View):
                 'form': form,
                 'couponform': CouponForm(),
                 'order': order,
-                'DISPLAY_COUPON_FORM': True
+                'DISPLAY_COUPON_FORM': True,
+                'bSecure_checkout_button': bsecure.checkout_button_image
             }
 
             shipping_address_qs = Address.objects.filter(
@@ -111,7 +156,7 @@ class CheckoutView(View):
             return render(self.request, "checkout.html", context)
         except ObjectDoesNotExist:
             messages.info(self.request, "You do not have an active order")
-            return redirect("core:checkout")
+            return redirect("/")
 
     def post(self, *args, **kwargs):
         form = CheckoutForm(self.request.POST or None)
@@ -119,8 +164,7 @@ class CheckoutView(View):
             order = Order.objects.get(user=self.request.user, ordered=False)
             if form.is_valid():
 
-                use_default_shipping = form.cleaned_data.get(
-                    'use_default_shipping')
+                use_default_shipping = form.cleaned_data.get('use_default_shipping')
                 if use_default_shipping:
                     print("Using the defualt shipping address")
                     address_qs = Address.objects.filter(
@@ -222,29 +266,20 @@ class CheckoutView(View):
 
                         order.billing_address = billing_address
                         order.save()
-
                         set_default_billing = form.cleaned_data.get(
                             'set_default_billing')
                         if set_default_billing:
                             billing_address.default = True
                             billing_address.save()
-
                     else:
                         messages.info(
-                            self.request, "Please fill in the required billing address fields")
+                            self.request,
+                            "Please fill in the required billing address fields"
+                        )
 
                 payment_option = form.cleaned_data.get('payment_option')
 
-                if payment_option == 'S':
-                    return redirect('core:payment', payment_option='stripe')
-                elif payment_option == 'P':
-                    return redirect('core:payment', payment_option='paypal')
-                elif payment_option == 'B':
-                    return redirect('core:payment', payment_option='bSecure')
-                else:
-                    messages.warning(
-                        self.request, "Invalid payment option selected!@#")
-                    return redirect('core:checkout')
+                return redirect('core:payment', payment_option='bSecure')
         except ObjectDoesNotExist:
             messages.warning(self.request, "You do not have an active order")
             return redirect("core:order-summary")
@@ -276,6 +311,7 @@ class PaymentView(View):
                         products[str(item.id)] = _item
                     customer = order.user
                     customer_detail = dict(
+                        # auth_code=customer.sso_auth_code.code,
                         name=customer.first_name + ' ' + customer.last_name,
                         email=customer.email,
                         country_code='92',
@@ -284,8 +320,7 @@ class PaymentView(View):
                     order_details = {
                         'customer': customer_detail,
                         'products': products,
-
-                        "order_id": str(order.id + 5),
+                        "order_id": str(order.id),
                         "total_amount": order.get_total(),
                         "sub_total_amount": order.get_sub_total(),
                         "discount_amount": order.get_coupon_amount(),
@@ -293,10 +328,17 @@ class PaymentView(View):
                     setup = bsecure.set_order(order_details=order_details)
                     if setup:
                         create_order = bsecure.create_order()
-                        # print(create_order)
+                        print(create_order)
                         if create_order.get('status') == 200:
-                            print(create_order.get("body").get('checkout_url'))
+                            bsecure_model = BSecure_Checkout()
+                            bsecure_model.reference_id = create_order.get('body', {}).get('order_reference')
+                            bsecure_model.order = order
+                            bsecure_model.save()
                             return redirect(create_order.get("body").get('checkout_url'))
+                        elif not create_order.get('status') == 200:
+                            order.ordered = True
+                            order.save()
+                            print('order already created')
                         return redirect('/')
         if order.billing_address:
             context = {
@@ -441,6 +483,22 @@ class HomeView(ListView):
 
     def get_queryset(self):
         return self.model.objects.all()
+
+    def get(self, *args, **kwargs):
+        print(kwargs)
+        response = super(HomeView, self).get(*args, **kwargs)
+        print(args)
+        print(response.context_data)
+        # contextdata
+        response.context_data.update(
+            {"bsecure_button_image_url": bsecure.sso_login_button_image}
+        )
+        return response
+
+    def post(self, *args, **kwargs):
+        print(kwargs)
+        print(args)
+        return super(HomeView, self).post(*args, **kwargs)
 
 
 class OrderSummaryView(LoginRequiredMixin, View):
